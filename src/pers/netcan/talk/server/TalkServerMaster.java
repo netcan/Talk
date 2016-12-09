@@ -1,9 +1,17 @@
+package pers.netcan.talk.server;
+
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Vector;
+import pers.netcan.talk.common.TalkUser;
 
 public class TalkServerMaster {
 	private static ServerSocket server;
+	static Vector<TalkUser> Users; // 所有用户
+
 	public void boot() {
+		Users = new Vector<TalkUser>();
+		Users.add(new TalkUser("All"));
 		try {
 			server = new ServerSocket(2333);
 		} catch (IOException e) {

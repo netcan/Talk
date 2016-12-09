@@ -1,3 +1,5 @@
+package pers.netcan.talk.common;
+import pers.netcan.talk.server.*;
 
 public class Talk {
 
