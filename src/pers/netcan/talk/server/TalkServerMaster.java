@@ -11,7 +11,7 @@ public class TalkServerMaster {
 
 	public void boot() {
 		Users = new Vector<TalkUser>();
-		Users.add(new TalkUser("All"));
+		Users.add(new TalkUser("Master"));
 		try {
 			server = new ServerSocket(2333);
 		} catch (IOException e) {
