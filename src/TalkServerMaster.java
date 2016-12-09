@@ -12,7 +12,7 @@ public class TalkServerMaster {
 		}
 		
 		while(true) {
-			TalkServerWorker worker;
+			TalkServerWorker worker = null;
 			try {
 				worker = new TalkServerWorker(server.accept());
 				worker.start();
