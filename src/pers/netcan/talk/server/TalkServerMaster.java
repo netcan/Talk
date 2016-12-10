@@ -7,13 +7,14 @@ import pers.netcan.talk.common.TalkUser;
 
 public class TalkServerMaster {
 	private static ServerSocket server;
+	public static int PORT = 2334;
 	static Vector<TalkUser> Users; // 所有用户
 
 	public void boot() {
 		Users = new Vector<TalkUser>();
 		Users.add(new TalkUser("Master"));
 		try {
-			server = new ServerSocket(2333);
+			server = new ServerSocket(PORT);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

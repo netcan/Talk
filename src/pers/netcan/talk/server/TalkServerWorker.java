@@ -17,6 +17,8 @@ public class TalkServerWorker extends Thread {
 	private Socket worker;
 	private String userName; // 用户id
 	private boolean logout;
+	private BufferedReader in;
+	private PrintWriter out;
 	private static Vector<TalkUser> Users;
 	public TalkServerWorker(Socket socket) {
 		this.worker = socket;
@@ -27,16 +29,17 @@ public class TalkServerWorker extends Thread {
 		Users = TalkServerMaster.Users;
 		logout = false;
 		try {
-			BufferedReader in  = new BufferedReader(new InputStreamReader(worker.getInputStream()));
-			PrintWriter out = new PrintWriter(worker.getOutputStream());
+			in  = new BufferedReader(new InputStreamReader(worker.getInputStream()));
+			out = new PrintWriter(worker.getOutputStream());
 			while(true) {
 				/* TODO
 				 * 这里完成聊天服务器相关请求
 				 */
 				if(logout) break;
 				String cmd = in.readLine();
+				if(cmd == null) logout();
 				execute(cmd);
-				showMsg(out);
+				showMsg();
 			}
 		} catch (IOException e) {
 			// TODO: handle exception
@@ -55,7 +58,7 @@ public class TalkServerWorker extends Thread {
 		return Users.get(Users.indexOf(new TalkUser(userName)));
 	}
 	
-	public void showMsg(PrintWriter out) { // 显示当前用户收到的信息
+	public void showMsg() { // 显示当前用户收到的信息
 		if(userName == null) return;
 		String msg;
 		while((msg = thisUser().getAMsg()) != null) {
@@ -104,10 +107,16 @@ public class TalkServerWorker extends Thread {
 		String arg = m.group(2);
 
 		if(action.equalsIgnoreCase("REGISTER")) { // [REGISTER]userName
-			if(register(arg))
+			if(register(arg)) {
+				out.println("[OK]");
+				out.flush();
 				log("A new user: "+arg+" has registered");
-			else
+			}
+			else {
+				out.println("[FAILED]");
+				out.flush();
 				log("A user: "+arg+" maybe existed");
+			}
 		} else if(action.contains("SENDTO")) { // [SENDTO xx]MSG
 			String toUser = action.substring("SENDTO".length() + 1, action.length());
 			if(send(toUser, arg))
