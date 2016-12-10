@@ -8,36 +8,25 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import static javafx.geometry.HPos.RIGHT;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
-import com.sun.xml.internal.ws.resources.SenderMessages;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -47,17 +36,14 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -69,6 +55,7 @@ public class TalkClient extends Application  {
 	private static BufferedReader in;
 	private static PrintWriter out;
 	private static Stage pStage;
+	private static String VERSION = "0.1";
 	private ObservableList<String> usrsList;
 	private Map<String, String> usrsMsg; // 保存信息
 	private Map<String, Boolean> usrsMsgNotify; // 消息提示
@@ -233,7 +220,7 @@ public class TalkClient extends Application  {
 			String fromUser = action.substring("ALLFROM".length() + 1, action.length());
 			storeMsg(fromUser, arg, true);
 		} else if(action.contains("FROM")) { // 存取消息
-			System.out.println(cmd);
+//			System.out.println(cmd);
 			String fromUser = action.substring("FROM".length() + 1, action.length());
 			storeMsg(fromUser, arg, false);
 		}
@@ -252,7 +239,6 @@ public class TalkClient extends Application  {
 	private void sendMsg() {
 		String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
 		if(sendMsg.getText() != null && ! Pattern.matches("\\n*", sendMsg.getText())) {
-			System.out.println(sendMsg.getText());
 			out.printf("[SENDTO %s]%s\n", curUsr, Base64.getEncoder().encodeToString(sendMsg.getText().getBytes(StandardCharsets.UTF_8)));
 			out.flush();
 			String Msg = String.format("[%s <%s>] %s\n", 
@@ -273,7 +259,7 @@ public class TalkClient extends Application  {
 	private void talkScene() { // 聊天界面
 		usrsMsg = new HashMap<String, String>();
 		usrsMsgNotify = new HashMap<String, Boolean>();
-		pStage.setTitle("Talk by netcan[当前用户: "+usrName+"]");
+		pStage.setTitle("Talk by netcan v"+ VERSION +" [当前用户: "+usrName+"]");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -373,7 +359,7 @@ public class TalkClient extends Application  {
 								if(usrsMsgNotify.get(curUsr) != null && usrsMsgNotify.get(curUsr)) { // 有新消息了
 									usrsMsgNotify.put(curUsr, false); // 已读
 									usrsList.set(curUsrId, curUsr);
-									System.out.println(curUsr);
+//									System.out.println(curUsr);
 									// 附加消息
 									message.appendText(usrsMsg.get(curUsr).substring(message.getText().length(), usrsMsg.get(curUsr).length()));
 								}
@@ -433,7 +419,7 @@ public class TalkClient extends Application  {
 	@Override
 	public void start(Stage primaryStage) throws IOException {
 		pStage = primaryStage;
-		pStage.setTitle("Talk by netcan");
+		pStage.setTitle("Talk by netcan v"+ VERSION);
 		pStage.setResizable(false);
 		loginScene();
 	}

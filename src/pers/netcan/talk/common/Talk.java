@@ -11,7 +11,7 @@ public class Talk {
 			TalkServerMaster server = new TalkServerMaster();
 			server.boot();
 		} else {
-			Application.launch(TalkClient.class, args);
+			Application.launch(TalkClient.class, args); // 启动方法比较特殊= =
 		}
 	}
 
