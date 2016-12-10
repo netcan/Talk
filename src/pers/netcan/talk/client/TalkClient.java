@@ -2,6 +2,7 @@ package pers.netcan.talk.client;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -32,7 +33,9 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
+import com.sun.xml.internal.ws.resources.SenderMessages;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -46,6 +49,8 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.TextFieldListCell;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -65,6 +70,8 @@ public class TalkClient extends Application  {
 	private ObservableList<String> usrsList;
 	private Map<String, String> usrsMsg; // 保存信息
 	private Map<String, Boolean> usrsMsgNotify; // 消息提示
+	private TextArea message, sendMsg; // 消息框
+	private ListView<String> usrsListView;
 	String ip = "", usrName = "";
 
 	private void loginScene() throws IOException {
@@ -173,27 +180,40 @@ public class TalkClient extends Application  {
 		});
 	}
 	
-	public void getUsrs(String usrsList) {
+	public void getUsrs(String usrsList) { // 刷新在线用户列表
 		String []usr = usrsList.split(",");
-//		ObservableList<String> us = FXCollections.observableArrayList(usr);
-		this.usrsList.clear();
+		ObservableList<String> us = FXCollections.observableArrayList(usr);
+		for(int i=0; i<this.usrsList.size(); ++i) {
+			String un = getUsrName(this.usrsList.get(i));
+			if(un != null) 
+				if( !us.contains(un)) this.usrsList.remove(i);
+		}
+
 		for(String u: usr) {
-			if(u!=null) {
-				if(usrsMsgNotify.get(u) != null && usrsMsgNotify.get(u))
-					this.usrsList.add(u + "(*)");
-				else
-					this.usrsList.add(u);
+			if(u!=null && !this.usrsList.contains(u) && !this.usrsList.contains(u + " (*)")) 
+				this.usrsList.add(u);
+		}
+
+		for(int i=0; i<this.usrsList.size(); ++i) {
+			String u = this.usrsList.get(i);
+			if(u != null && usrsMsgNotify.get(u) != null) { // 有新消息
+				String un = getUsrName(this.usrsList.get(i));
+				if(usrsMsgNotify.get(un)) this.usrsList.set(i, un + " (*)");
 			}
 		}
+
 	}
 	
 	public void storeMsg(String fromUsr, String msg, boolean all) {
-		String Msg = String.format("[%s %s] %s\n", 
+		String Msg = String.format("[%s <%s>] %s\n", 
 				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), 
 				fromUsr, msg
 				);
 		if(all) fromUsr = TalkServerMaster.Master;
-		usrsMsg.put(fromUsr, usrsMsg.get(fromUsr) + Msg);
+		if(usrsMsg.get(fromUsr) == null)
+			usrsMsg.put(fromUsr, Msg);
+		else
+			usrsMsg.put(fromUsr, usrsMsg.get(fromUsr) + Msg);
 		usrsMsgNotify.put(fromUsr, true);
 	}
 	
@@ -205,41 +225,79 @@ public class TalkClient extends Application  {
 		m.find(); // 必须要find才能group。。。
 		String action = m.group(1);
 		String arg = m.group(2);
-		System.out.println(action);
 		if(action.equalsIgnoreCase("USERS")) {
 			getUsrs(arg);
 		} else if(action.contains("ALLFROM")) { // 存取消息
 			String fromUser = action.substring("ALLFROM".length() + 1, action.length());
 			storeMsg(fromUser, arg, true);
 		} else if(action.contains("FROM")) { // 存取消息
+			System.out.println(cmd);
 			String fromUser = action.substring("FROM".length() + 1, action.length());
 			storeMsg(fromUser, arg, false);
+		}
+	}
+
+	// 获取用户名，例如"xxx (*)"，得到xxx
+	private String getUsrName(String u) {
+		if(u == null) return null;
+		Pattern p = Pattern.compile("([\\w\\d]*)( \\(\\*\\))?");
+		Matcher m = p.matcher(u);
+		m.find();
+		return m.group(1);
+	}
+	
+	// 发送消息
+	private void sendMsg() {
+		String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
+		if(sendMsg.getText() != null && ! Pattern.matches("\\n*", sendMsg.getText())) {
+			System.out.println(sendMsg.getText());
+			out.printf("[SENDTO %s]%s\n", curUsr, sendMsg.getText());
+			out.flush();
+			String Msg = String.format("[%s <%s>] %s\n", 
+					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), 
+					usrName, sendMsg.getText()
+					);
+			if(usrsMsg.get(curUsr) != null) 
+				usrsMsg.put(curUsr, usrsMsg.get(curUsr) + Msg);
+			else
+				usrsMsg.put(curUsr, Msg);
+			message.appendText(Msg);
+			sendMsg.setText("");
+		} else {
+			sendMsg.setText("");
 		}
 	}
 	
 	private void talkScene() { // 聊天界面
 		usrsMsg = new HashMap<String, String>();
 		usrsMsgNotify = new HashMap<String, Boolean>();
+		pStage.setTitle("Talk by netcan[当前用户: "+usrName+"]");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
 
-        usrsList = FXCollections.observableArrayList();
-        ListView<String> usrsListView = new ListView<>(usrsList);
+        // 在线用户
+        usrsList = FXCollections.observableArrayList(TalkServerMaster.Master);
+        usrsListView = new ListView<>(usrsList);
         usrsListView.setItems(usrsList);
+        usrsListView.getSelectionModel().select(0);
 
         VBox usrListBox = new VBox();
         VBox.setVgrow(usrsListView, Priority.ALWAYS);
         usrListBox.getChildren().addAll(usrsListView);
+
         
+        // 消息界面
         VBox sendBox = new VBox();
-        TextArea message = new TextArea();
-        TextArea sendMsg = new TextArea();
+        message = new TextArea();
+        sendMsg = new TextArea();
         message.setEditable(false);
         message.setPrefRowCount(20);
+        message.setWrapText(true);
         sendMsg.setPrefRowCount(5);
+        sendMsg.setWrapText(true);
         sendBox.getChildren().add(message);
         sendBox.getChildren().add(sendMsg);
 
@@ -253,8 +311,41 @@ public class TalkClient extends Application  {
         grid.add(sendBox, 1, 0);
 		Scene scene = new Scene(grid);
 		pStage.setScene(scene);
+		
+		// 事件处理
+        usrsListView.getSelectionModel().selectedItemProperty().addListener(
+        		(ObservableValue<? extends String> ov, String old_val,
+        				String new_val) -> {
+        					String oldV = getUsrName(old_val);
+        					String newV = getUsrName(new_val);
+        					if(! oldV.equals(newV)) { // 切换对话
+        						message.clear();
+        						if(usrsMsg.get(newV) != null) {
+        							message.setText(usrsMsg.get(newV));
+        							usrsMsgNotify.put(newV, false); // 已读
+        							usrsList.set(usrsList.indexOf(new_val), newV); // 删除(*)
+        						}
+        					}
+        				}
+        		);
+        // 发送消息
+        btn.setOnAction(new EventHandler<ActionEvent>() {
+        	@Override
+        	public void handle(ActionEvent event) {
+        		sendMsg();
+        	}
+		});
+        sendMsg.setOnKeyPressed(new EventHandler<KeyEvent>() {
+        	   @Override
+        	    public void handle(KeyEvent keyEvent) {
+        	        if (keyEvent.getCode() == KeyCode.ENTER)  {
+        	        	sendMsg();
+        	        }
+        	    }
+		});
 
-		Task task = new Task<Void>() {
+		// 线程处理消息接收
+		Task<Void> task = new Task<Void>() {
 			@Override
 			public Void call() throws Exception {
 				while(out != null && in != null) {
@@ -273,12 +364,17 @@ public class TalkClient extends Application  {
 							public void run() {
 								// TODO Auto-generated method stub
 								// 刷新在线用户
-								int setUserId = usrsListView.getSelectionModel().getSelectedIndex();
-								if(setUserId == -1) setUserId = 0;
-//								System.out.println(cmd);
 								execute(cmd);
-								if(setUserId >= usrsList.size()) setUserId = 0;
-								usrsListView.getSelectionModel().select(setUserId);
+								// 刷新选中用户最新消息
+								int curUsrId = usrsListView.getSelectionModel().getSelectedIndex();
+								String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
+								if(usrsMsgNotify.get(curUsr) != null && usrsMsgNotify.get(curUsr)) { // 有新消息了
+									usrsMsgNotify.put(curUsr, false); // 已读
+									usrsList.set(curUsrId, curUsr);
+									System.out.println(curUsr);
+									// 附加消息
+									message.appendText(usrsMsg.get(curUsr).substring(message.getText().length(), usrsMsg.get(curUsr).length()));
+								}
 							}
 						});
 

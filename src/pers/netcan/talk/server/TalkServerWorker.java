@@ -24,6 +24,7 @@ public class TalkServerWorker extends Thread {
 	public TalkServerWorker(Socket socket) {
 		this.worker = socket;
 	}
+
 	
 	@Override
 	public void run() {
@@ -101,11 +102,13 @@ public class TalkServerWorker extends Thread {
 	public boolean send(String userName, String msg) { // 发送消息
 		int toUserId;
 		if((toUserId = Users.indexOf(new TalkUser(userName))) != -1) {
-			if(Users.get(toUserId).getName().equalsIgnoreCase("Master"))  // 群聊
+			if(Users.get(toUserId).getName().equalsIgnoreCase(TalkServerMaster.Master))  // 群聊
 				for(int i=toUserId+1; i<Users.size(); ++i) { // 这里的要大括号，防止if和下一个else匹配！
 					if(i != Users.indexOf(thisUser())) 
 						Users.get(i).sendAll(this.userName, msg); // 依次发送
 				}
+			else if(Users.get(toUserId).getName().equalsIgnoreCase(userName)) 
+				 Users.get(toUserId).sendMsg(TalkServerMaster.Master, msg);
 			else Users.get(toUserId).sendMsg(this.userName, msg);
 			return true;
 		}
@@ -133,6 +136,13 @@ public class TalkServerWorker extends Thread {
 		if(action.equalsIgnoreCase("REGISTER")) { // [REGISTER]userName
 			if(register(arg)) {
 				out.println("[OK]");
+				out.flush();
+
+				// hello world!
+				send(userName,
+						"欢迎使用Talk，Talk是Netcan的第一个Java作品，项目已开源：https://github.com/netcan/Talk，欢迎Star！" +
+						"个人博客：http://www.netcan666.com/"
+						);
 				out.flush();
 				log("A new user: "+arg+" has registered");
 			}
