@@ -17,7 +17,7 @@ public class TalkUser {
 	public void sendMsg(String sender, String msg) { // sender发送msg给此user
 		message.add("[FROM " + sender + "]" + msg); // [FROM SENDER]msg
 	}
-	public void senAll(String sender, String msg) { // sender发送msg给此user
+	public void sendAll(String sender, String msg) { // sender发送msg给此user
 		message.add("[ALLFROM " + sender + "]" + msg); // [FROM SENDER]msg
 	}
 	public String getAMsg() { // 获得一条信息
@@ -27,7 +27,7 @@ public class TalkUser {
 	@Override
 	public boolean equals(Object user) { // 判断用户是否相等，主要用来判断是否存在
 		TalkUser u = (TalkUser)user;
-		if(u == null || u.userName == null) return false;
+		if(u == null || u.userName == null || this.userName == null) return false;
 		return this.userName.equalsIgnoreCase(u.userName);
 	}
 }

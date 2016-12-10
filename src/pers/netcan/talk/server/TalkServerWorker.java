@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Vector;
@@ -35,18 +36,28 @@ public class TalkServerWorker extends Thread {
 				/* TODO
 				 * 这里完成聊天服务器相关请求
 				 */
-				if(logout) break;
+				Thread.sleep(300);
 				String cmd = in.readLine();
 				if(cmd == null) logout();
+				if(logout) break;
+
 				execute(cmd);
 				showMsg();
 			}
 		} catch (IOException e) {
 			// TODO: handle exception
 			e.printStackTrace();
-		}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+
 		try {
 			worker.close();
+			in.close();
+			out.close();
+			Thread.currentThread().interrupt();
+			return;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -75,6 +86,17 @@ public class TalkServerWorker extends Thread {
 		Users.add(new TalkUser(userName));
 		return true;
 	}
+	
+	public void getUsrs() {
+		String usrs = "[USERS]";
+		for(TalkUser usr: Users) {
+			if(!usr.equals(thisUser())) {
+				usrs += usr.getName() + ",";
+			}
+		}
+		out.println(usrs);
+		out.flush();
+	}
 
 	public boolean send(String userName, String msg) { // 发送消息
 		int toUserId;
@@ -82,7 +104,7 @@ public class TalkServerWorker extends Thread {
 			if(Users.get(toUserId).getName().equalsIgnoreCase("Master"))  // 群聊
 				for(int i=toUserId+1; i<Users.size(); ++i) { // 这里的要大括号，防止if和下一个else匹配！
 					if(i != Users.indexOf(thisUser())) 
-						Users.get(i).senAll(this.userName, msg); // 依次发送
+						Users.get(i).sendAll(this.userName, msg); // 依次发送
 				}
 			else Users.get(toUserId).sendMsg(this.userName, msg);
 			return true;
@@ -91,7 +113,9 @@ public class TalkServerWorker extends Thread {
 	}
 
 	public void logout() {
+		if(userName == null) return;
 		Users.remove(new TalkUser(userName));
+		log(this.userName + " has logged out");
 		this.userName = null;
 		logout = true;
 	}
@@ -99,7 +123,7 @@ public class TalkServerWorker extends Thread {
 	public void execute(String cmd) { // 执行动作，语法[ACTION]ARG
 		String regex = "\\[([\\w\\s]+)\\](.*)"; // 匹配[action]arg
 		if(cmd == null || ! cmd.matches(regex)) return;
-		log(String.format("command: \"%s\"", cmd));
+//		log(String.format("command: \"%s\"", cmd));
 		Pattern p = Pattern.compile(regex);
 		Matcher m = p.matcher(cmd);
 		m.find(); // 必须要find才能group。。。
@@ -125,6 +149,9 @@ public class TalkServerWorker extends Thread {
 				log(String.format("%s send to %s a message: %s, failed", thisUser().getName(), toUser, arg));
 		} else if(action.contains("LOGOUT")) { // LOGOUT
 			logout();
+		} else if(action.contains("GETUSRS")) { // 在线用户
+//			log("get users");
+			getUsrs();
 		}
 	}
 	

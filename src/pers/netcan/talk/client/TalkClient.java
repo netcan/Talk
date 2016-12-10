@@ -1,6 +1,10 @@
 package pers.netcan.talk.client;
 
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import static javafx.geometry.HPos.RIGHT;
@@ -18,8 +22,17 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.file.attribute.UserPrincipalNotFoundException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -28,24 +41,30 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import jdk.jfr.events.FileWriteEvent;
 import pers.netcan.talk.server.TalkServerMaster;
-import pers.netcan.talk.server.TalkServerWorker;
 
 public class TalkClient extends Application  {
 	private static Socket client;
 	private static BufferedReader in;
 	private static PrintWriter out;
 	private static Stage pStage;
+	private ObservableList<String> usrsList;
+	private Map<String, String> usrsMsg; // 保存信息
+	private Map<String, Boolean> usrsMsgNotify; // 消息提示
 	String ip = "", usrName = "";
 
 	private void loginScene() throws IOException {
@@ -154,14 +173,131 @@ public class TalkClient extends Application  {
 		});
 	}
 	
+	public void getUsrs(String usrsList) {
+		String []usr = usrsList.split(",");
+//		ObservableList<String> us = FXCollections.observableArrayList(usr);
+		this.usrsList.clear();
+		for(String u: usr) {
+			if(u!=null) {
+				if(usrsMsgNotify.get(u) != null && usrsMsgNotify.get(u))
+					this.usrsList.add(u + "(*)");
+				else
+					this.usrsList.add(u);
+			}
+		}
+	}
+	
+	public void storeMsg(String fromUsr, String msg, boolean all) {
+		String Msg = String.format("[%s %s] %s\n", 
+				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), 
+				fromUsr, msg
+				);
+		if(all) fromUsr = TalkServerMaster.Master;
+		usrsMsg.put(fromUsr, usrsMsg.get(fromUsr) + Msg);
+		usrsMsgNotify.put(fromUsr, true);
+	}
+	
+	public void execute(String cmd) {
+		String regex = "\\[([\\w\\s]+)\\](.*)"; // 匹配[action]arg
+		if(cmd == null || ! cmd.matches(regex)) return;
+		Pattern p = Pattern.compile(regex);
+		Matcher m = p.matcher(cmd);
+		m.find(); // 必须要find才能group。。。
+		String action = m.group(1);
+		String arg = m.group(2);
+		System.out.println(action);
+		if(action.equalsIgnoreCase("USERS")) {
+			getUsrs(arg);
+		} else if(action.contains("ALLFROM")) { // 存取消息
+			String fromUser = action.substring("ALLFROM".length() + 1, action.length());
+			storeMsg(fromUser, arg, true);
+		} else if(action.contains("FROM")) { // 存取消息
+			String fromUser = action.substring("FROM".length() + 1, action.length());
+			storeMsg(fromUser, arg, false);
+		}
+	}
+	
 	private void talkScene() { // 聊天界面
+		usrsMsg = new HashMap<String, String>();
+		usrsMsgNotify = new HashMap<String, Boolean>();
+
         GridPane grid = new GridPane();
-        grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
-		Scene scene = new Scene(grid, 800, 600);
+
+        usrsList = FXCollections.observableArrayList();
+        ListView<String> usrsListView = new ListView<>(usrsList);
+        usrsListView.setItems(usrsList);
+
+        VBox usrListBox = new VBox();
+        VBox.setVgrow(usrsListView, Priority.ALWAYS);
+        usrListBox.getChildren().addAll(usrsListView);
+        
+        VBox sendBox = new VBox();
+        TextArea message = new TextArea();
+        TextArea sendMsg = new TextArea();
+        message.setEditable(false);
+        message.setPrefRowCount(20);
+        sendMsg.setPrefRowCount(5);
+        sendBox.getChildren().add(message);
+        sendBox.getChildren().add(sendMsg);
+
+        Button btn = new Button("发送");
+        HBox hbBtn = new HBox(0);
+        hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
+        hbBtn.getChildren().add(btn);
+        sendBox.getChildren().add(hbBtn);
+
+        grid.add(usrListBox, 0, 0);
+        grid.add(sendBox, 1, 0);
+		Scene scene = new Scene(grid);
 		pStage.setScene(scene);
+
+		Task task = new Task<Void>() {
+			@Override
+			public Void call() throws Exception {
+				while(out != null && in != null) {
+					try {
+						Thread.sleep(300);
+						//	这里处理客户端请求
+						// 获取用户列表
+						out.println("[GETUSRS]");
+						out.flush(); 
+
+						String cmd = in.readLine();
+						if(cmd == null) break;
+						// 处理响应
+						Platform.runLater(new Runnable() { // 刷新UI要放到runLater刷新
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								// 刷新在线用户
+								int setUserId = usrsListView.getSelectionModel().getSelectedIndex();
+								if(setUserId == -1) setUserId = 0;
+//								System.out.println(cmd);
+								execute(cmd);
+								if(setUserId >= usrsList.size()) setUserId = 0;
+								usrsListView.getSelectionModel().select(setUserId);
+							}
+						});
+
+
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				return null;
+			}
+		};
+		Thread th = new Thread(task);
+		th.setDaemon(true);
+		th.start();
+
 	}
 	
 	private boolean checkLogin() {
@@ -176,9 +312,9 @@ public class TalkClient extends Application  {
 			out.println("[REGISTER]"+usrName);
 			out.flush();
 			String result = in.readLine();
-			if(result.equals("[FAILED]")) {
+			if(result.equals("[FAILED]")) 
 				return false;
-			} else if(result.equals("[OK]"))
+			else if(result.equals("[OK]")) 
 				return true;
 		} catch (UnknownHostException e1) {
 			// TODO Auto-generated catch block
@@ -200,9 +336,28 @@ public class TalkClient extends Application  {
 	public void start(Stage primaryStage) throws IOException {
 		pStage = primaryStage;
 		pStage.setTitle("Talk by netcan");
+		pStage.setResizable(false);
 		loginScene();
 	}
-
+	
+	@Override 
+	public void stop() {
+		try {
+			if(in != null && out != null) {
+				out.println("[LOGOUT]");
+				out.flush();
+				in.close();
+				out.close();
+				in = null;
+				out = null;
+				client.close();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
