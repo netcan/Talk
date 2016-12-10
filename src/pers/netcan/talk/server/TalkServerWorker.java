@@ -5,8 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -107,9 +108,10 @@ public class TalkServerWorker extends Thread {
 					if(i != Users.indexOf(thisUser())) 
 						Users.get(i).sendAll(this.userName, msg); // 依次发送
 				}
-			else if(Users.get(toUserId).getName().equalsIgnoreCase(userName)) 
-				 Users.get(toUserId).sendMsg(TalkServerMaster.Master, msg);
-			else Users.get(toUserId).sendMsg(this.userName, msg);
+			else if(userName.equals(this.userName)) 
+				Users.get(toUserId).sendMsg(TalkServerMaster.Master, msg);
+			else
+				Users.get(toUserId).sendMsg(this.userName, msg);
 			return true;
 		}
 		else return false;
@@ -140,8 +142,7 @@ public class TalkServerWorker extends Thread {
 
 				// hello world!
 				send(userName,
-						"欢迎使用Talk，Talk是Netcan的第一个Java作品，项目已开源：https://github.com/netcan/Talk，欢迎Star！" +
-						"个人博客：http://www.netcan666.com/"
+						Base64.getEncoder().encodeToString(TalkServerMaster.WELCOME.getBytes(StandardCharsets.UTF_8))
 						);
 				out.flush();
 				log("A new user: "+arg+" has registered");

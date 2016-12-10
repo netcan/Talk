@@ -22,10 +22,12 @@ import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -207,7 +209,7 @@ public class TalkClient extends Application  {
 	public void storeMsg(String fromUsr, String msg, boolean all) {
 		String Msg = String.format("[%s <%s>] %s\n", 
 				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), 
-				fromUsr, msg
+				fromUsr, new String(Base64.getDecoder().decode(msg), StandardCharsets.UTF_8)
 				);
 		if(all) fromUsr = TalkServerMaster.Master;
 		if(usrsMsg.get(fromUsr) == null)
@@ -251,7 +253,7 @@ public class TalkClient extends Application  {
 		String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
 		if(sendMsg.getText() != null && ! Pattern.matches("\\n*", sendMsg.getText())) {
 			System.out.println(sendMsg.getText());
-			out.printf("[SENDTO %s]%s\n", curUsr, sendMsg.getText());
+			out.printf("[SENDTO %s]%s\n", curUsr, Base64.getEncoder().encodeToString(sendMsg.getText().getBytes(StandardCharsets.UTF_8)));
 			out.flush();
 			String Msg = String.format("[%s <%s>] %s\n", 
 					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), 
@@ -454,10 +456,5 @@ public class TalkClient extends Application  {
 		}
 	}
 	
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-		launch(args);
-	}
 
 }
