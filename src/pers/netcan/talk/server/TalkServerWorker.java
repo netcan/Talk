@@ -18,10 +18,10 @@ import pers.netcan.talk.common.TalkUser;
 public class TalkServerWorker extends Thread {
 	private Socket worker;
 	private String userName; // 用户id
-	private boolean logout;
 	private BufferedReader in;
 	private PrintWriter out;
 	private static Vector<TalkUser> Users;
+	private boolean logout;
 	public TalkServerWorker(Socket socket) {
 		this.worker = socket;
 	}
@@ -30,7 +30,6 @@ public class TalkServerWorker extends Thread {
 	@Override
 	public void run() {
 		Users = TalkServerMaster.Users;
-		logout = false;
 		try {
 			in  = new BufferedReader(new InputStreamReader(worker.getInputStream()));
 			out = new PrintWriter(worker.getOutputStream());
@@ -40,10 +39,12 @@ public class TalkServerWorker extends Thread {
 				 */
 				Thread.sleep(300);
 				String cmd = in.readLine();
-				if(cmd == null) logout();
-				if(logout) break;
-
+				if(cmd == null)  {
+					logout();
+					break;
+				}
 				execute(cmd);
+				if(logout) break;
 				showMsg();
 			}
 		} catch (IOException e) {
@@ -55,9 +56,9 @@ public class TalkServerWorker extends Thread {
 		} 
 
 		try {
-			worker.close();
 			in.close();
 			out.close();
+			worker.close();
 			Thread.currentThread().interrupt();
 			return;
 		} catch (IOException e) {
@@ -118,11 +119,15 @@ public class TalkServerWorker extends Thread {
 	}
 
 	public void logout() {
-		if(userName == null) return;
+		if(userName == null) {
+			logout = true;
+			return;
+		}
 		Users.remove(new TalkUser(userName));
 		log(this.userName + " has logged out");
 		this.userName = null;
 		logout = true;
+		return;
 	}
 
 	public void execute(String cmd) { // 执行动作，语法[ACTION]ARG
