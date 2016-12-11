@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -55,12 +56,13 @@ public class TalkClient extends Application  {
 	private static BufferedReader in;
 	private static PrintWriter out;
 	private static Stage pStage;
-	private static String VERSION = "0.1";
+	private static String VERSION = "0.2";
 	private ObservableList<String> usrsList;
 	private Map<String, String> usrsMsg; // 保存信息
 	private Map<String, Boolean> usrsMsgNotify; // 消息提示
 	private TextArea message, sendMsg; // 消息框
 	private ListView<String> usrsListView;
+	private boolean messageGotoEndLine; // 切换消息滚到最后一行
 	String ip = "", usrName = "";
 
 	private void loginScene() throws IOException {
@@ -301,21 +303,26 @@ public class TalkClient extends Application  {
 		pStage.setScene(scene);
 		
 		// 事件处理
+		// 消息切换
         usrsListView.getSelectionModel().selectedItemProperty().addListener(
         		(ObservableValue<? extends String> ov, String old_val,
         				String new_val) -> {
         					String oldV = getUsrName(old_val);
         					String newV = getUsrName(new_val);
         					if(! oldV.equals(newV)) { // 切换对话
-        						message.clear();
+        						System.out.println("debug");
         						if(usrsMsg.get(newV) != null) {
         							message.setText(usrsMsg.get(newV));
         							usrsMsgNotify.put(newV, false); // 已读
         							usrsList.set(usrsList.indexOf(new_val), newV); // 删除(*)
+        							messageGotoEndLine = true; // 因为事件处理无法滚到最后，只能通过这种方式让外部滚动了
+        						} else {
+        							message.setText("");
         						}
         					}
         				}
         		);
+
         // 发送消息
         btn.setOnAction(new EventHandler<ActionEvent>() {
         	@Override
@@ -353,6 +360,10 @@ public class TalkClient extends Application  {
 								// TODO Auto-generated method stub
 								// 刷新在线用户
 								execute(cmd);
+								if(messageGotoEndLine) { // 滚到最后
+									message.setScrollTop(Double.MAX_VALUE);
+									messageGotoEndLine = false;
+								}
 								// 刷新选中用户最新消息
 								int curUsrId = usrsListView.getSelectionModel().getSelectedIndex();
 								String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
