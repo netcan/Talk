@@ -310,7 +310,6 @@ public class TalkClient extends Application  {
         					String oldV = getUsrName(old_val);
         					String newV = getUsrName(new_val);
         					if(! oldV.equals(newV)) { // 切换对话
-        						System.out.println("debug");
         						if(usrsMsg.get(newV) != null) {
         							message.setText(usrsMsg.get(newV));
         							usrsMsgNotify.put(newV, false); // 已读
