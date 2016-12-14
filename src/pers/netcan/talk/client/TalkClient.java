@@ -458,9 +458,14 @@ public class TalkClient extends Application  {
 								// 刷新选中用户最新消息
 								int curUsrId = usrsListView.getSelectionModel().getSelectedIndex();
 								String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
-								if(usrIsOffline(usrsListView.getSelectionModel().getSelectedItem())) 
+								if(usrIsOffline(usrsListView.getSelectionModel().getSelectedItem())) {
+									sendMsg.setText(curUsr + " is offline.");
 									sendMsg.setDisable(true);
-								else sendMsg.setDisable(false);
+								}
+								else {
+									sendMsg.setText("");
+									sendMsg.setDisable(false);
+								}
 
 								if(usrsMsgNotify.get(curUsr) != null && usrsMsgNotify.get(curUsr)) { // 有新消息了
 									usrsMsgNotify.put(curUsr, false); // 已读
