@@ -66,7 +66,7 @@ public class TalkClient extends Application  {
 	private static BufferedReader in;
 	private static PrintWriter out;
 	private static Stage pStage;
-	private static String VERSION = "0.2";
+	private static String VERSION = "0.3";
 	private static String talkRecordDir = "TalkRecords";
 	private ObservableList<String> usrsList;
 	private Map<String, String> usrsMsg; // 保存信息
