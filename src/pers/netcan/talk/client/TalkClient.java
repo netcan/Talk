@@ -1,3 +1,11 @@
+/*************************************************************************
+	> File Name: TalkClient.java
+	> Author: Netcan
+	> Blog: http://www.netcan666.com
+	> Mail: 1469709759@qq.com
+	> Created Time: 2016-12-14 16:49:54 CST
+ ************************************************************************/
+
 package pers.netcan.talk.client;
 
 import javafx.application.Application;
@@ -12,6 +20,8 @@ import javafx.event.EventHandler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -57,6 +67,7 @@ public class TalkClient extends Application  {
 	private static PrintWriter out;
 	private static Stage pStage;
 	private static String VERSION = "0.2";
+	private static String talkRecordDir = "TalkRecords";
 	private ObservableList<String> usrsList;
 	private Map<String, String> usrsMsg; // 保存信息
 	private Map<String, Boolean> usrsMsgNotify; // 消息提示
@@ -85,7 +96,7 @@ public class TalkClient extends Application  {
 					Matcher m = Pattern.compile(usrNameRegex).matcher(line);
 					m.find();
 					usrName = m.group(1);
-				} 
+				}
 			}
 			br.close();
 			fr.close();
@@ -101,7 +112,7 @@ public class TalkClient extends Application  {
 
         Label ipAddr = new Label("ip地址:");
         grid.add(ipAddr, 0, 1);
-        
+
         TextField ipAddrField = new TextField();
         ipAddrField.setText(ip);
         grid.add(ipAddrField, 1, 1);
@@ -119,7 +130,7 @@ public class TalkClient extends Application  {
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
         hbBtn.getChildren().add(btn);
         grid.add(hbBtn, 1, 4);
-		
+
         Scene scene = new Scene(grid, 320, 240);
 
 		pStage.setScene(scene);
@@ -135,7 +146,7 @@ public class TalkClient extends Application  {
 					return;
 				}
 				if(!Pattern.matches(
-						"([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}", 
+						"([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}",
 						ipAddrField.getText()))  {
 					alert.setContentText("请检查ip地址！");
 					alert.showAndWait();
@@ -166,38 +177,44 @@ public class TalkClient extends Application  {
 					alert.setContentText("登录失败！");
 					alert.showAndWait();
 				}
-				
+
 			}
 		});
 	}
-	
+
 	public void getUsrs(String usrsList) { // 刷新在线用户列表
 		String []usr = usrsList.split(",");
 		ObservableList<String> us = FXCollections.observableArrayList(usr);
+		
+		// 标记离线状态
 		for(int i=0; i<this.usrsList.size(); ++i) {
+			if(this.usrsList.get(i).equals(TalkServerMaster.Master)) continue;
 			String un = getUsrName(this.usrsList.get(i));
-			if(un != null) 
-				if( !us.contains(un)) this.usrsList.remove(i);
+			if(un != null) {
+				if( !us.contains(un)) this.usrsList.set(i, un + " (Offline)");
+				else this.usrsList.set(i, un);
+			}
 		}
 
+		// 刷新列表
 		for(String u: usr) {
-			if(u!=null && !this.usrsList.contains(u) && !this.usrsList.contains(u + " (*)")) 
+			if(u!=null && !this.usrsList.contains(u) && !this.usrsList.contains(u + " (*)") && !this.usrsList.contains(u + " (Offline)"))
 				this.usrsList.add(u);
 		}
 
+		// 消息提醒
 		for(int i=0; i<this.usrsList.size(); ++i) {
-			String u = this.usrsList.get(i);
-			if(u != null && usrsMsgNotify.get(u) != null) { // 有新消息
-				String un = getUsrName(this.usrsList.get(i));
-				if(usrsMsgNotify.get(un)) this.usrsList.set(i, un + " (*)");
+			String u = getUsrName(this.usrsList.get(i));
+			if(u != null && usrsMsgNotify.get(u) != null && usrsMsgNotify.get(u)) { // 有新消息
+				this.usrsList.set(i, u + " (*)");
 			}
 		}
 
 	}
-	
+
 	public void storeMsg(String fromUsr, String msg, boolean all) {
-		String Msg = String.format("[%s <%s>] %s\n", 
-				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), 
+		String Msg = String.format("[%s <%s>] %s\n",
+				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()),
 				fromUsr, new String(Base64.getDecoder().decode(msg), StandardCharsets.UTF_8)
 				);
 		if(all) fromUsr = TalkServerMaster.Master;
@@ -207,7 +224,7 @@ public class TalkClient extends Application  {
 			usrsMsg.put(fromUsr, usrsMsg.get(fromUsr) + Msg);
 		usrsMsgNotify.put(fromUsr, true);
 	}
-	
+
 	public void execute(String cmd) {
 		String regex = "\\[([\\w\\s]+)\\](.*)"; // 匹配[action]arg
 		if(cmd == null || ! cmd.matches(regex)) return;
@@ -227,27 +244,99 @@ public class TalkClient extends Application  {
 			storeMsg(fromUser, arg, false);
 		}
 	}
+	
+	/**
+	 * 加载聊天记录
+	 */
+	private void loadTalkRecord() {
+		File dir = new File(talkRecordDir);
+		Pattern p = Pattern.compile("(.+)\\.txt$");
+		if(! dir.exists()) return;
+		for(File file: dir.listFiles()) { // 遍历记录文件
+			Matcher m = p.matcher(file.getName());
+			if(m.find()) {
+				if(m.group(1).equals(usrName)) continue;
+
+				try {
+					FileInputStream fis = new FileInputStream(file);
+					byte[] data = new byte[(int)file.length()];
+					fis.read(data);
+					fis.close();
+					usrsMsg.put(m.group(1), new String(data, "UTF-8"));
+					if(!m.group(1).equals(TalkServerMaster.Master)) usrsList.add(m.group(1));
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+	
+	/** 
+	 * 保存聊天记录
+	 */
+	private void saveTalkRecord() {
+		File dir = new File(talkRecordDir);
+		if(! dir.exists()) dir.mkdir();
+		for(Map.Entry<String, String> usr: usrsMsg.entrySet()) {
+			File file = new File(talkRecordDir + "/" + usr.getKey() + ".txt");
+			try {
+				FileWriter fw = new FileWriter(file);
+				BufferedWriter bw = new BufferedWriter(fw);
+				bw.write(usr.getValue());
+				bw.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
 
 	// 获取用户名，例如"xxx (*)"，得到xxx
 	private String getUsrName(String u) {
 		if(u == null) return null;
-		Pattern p = Pattern.compile("([\\w\\d]*)( \\(\\*\\))?");
+		/*
+		 * 用户有3种状态：
+		 * users: 在线状态
+		 * users (*): 该用户发来消息
+		 * users (offline): 该用户离线了
+		 */
+		Pattern p = Pattern.compile("([\\w\\d]+)( \\((\\*|Offline)\\))?"); 
 		Matcher m = p.matcher(u);
 		m.find();
 		return m.group(1);
 	}
-	
+
+	/**
+	 * 判断用户是否离线
+	 * @param u
+	 * @return 是否离线
+	 */
+	private boolean usrIsOffline(String u) { 
+		if(u == null) return false;
+		Pattern p = Pattern.compile("([\\w\\d]+)( \\((\\*|Offline)\\))?"); 
+		Matcher m = p.matcher(u);
+		m.find();
+		return m.group(3) != null && m.group(3).equals("Offline");
+	}
+
+
 	// 发送消息
 	private void sendMsg() {
 		String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
 		if(sendMsg.getText() != null && ! Pattern.matches("\\n*", sendMsg.getText())) {
 			out.printf("[SENDTO %s]%s\n", curUsr, Base64.getEncoder().encodeToString(sendMsg.getText().getBytes(StandardCharsets.UTF_8)));
 			out.flush();
-			String Msg = String.format("[%s <%s>] %s\n", 
-					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), 
+			String Msg = String.format("[%s <%s>] %s\n",
+					new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()),
 					usrName, sendMsg.getText()
 					);
-			if(usrsMsg.get(curUsr) != null) 
+			if(usrsMsg.get(curUsr) != null)
 				usrsMsg.put(curUsr, usrsMsg.get(curUsr) + Msg);
 			else
 				usrsMsg.put(curUsr, Msg);
@@ -257,10 +346,12 @@ public class TalkClient extends Application  {
 			sendMsg.setText("");
 		}
 	}
-	
+
 	private void talkScene() { // 聊天界面
 		usrsMsg = new HashMap<String, String>();
 		usrsMsgNotify = new HashMap<String, Boolean>();
+        usrsList = FXCollections.observableArrayList(TalkServerMaster.Master);
+		loadTalkRecord();
 		pStage.setTitle("Talk by netcan v"+ VERSION +" [当前用户: "+usrName+"]");
 
         GridPane grid = new GridPane();
@@ -269,7 +360,6 @@ public class TalkClient extends Application  {
         grid.setPadding(new Insets(25, 25, 25, 25));
 
         // 在线用户
-        usrsList = FXCollections.observableArrayList(TalkServerMaster.Master);
         usrsListView = new ListView<>(usrsList);
         usrsListView.setItems(usrsList);
         usrsListView.getSelectionModel().select(0);
@@ -278,7 +368,7 @@ public class TalkClient extends Application  {
         VBox.setVgrow(usrsListView, Priority.ALWAYS);
         usrListBox.getChildren().addAll(usrsListView);
 
-        
+
         // 消息界面
         VBox sendBox = new VBox();
         message = new TextArea();
@@ -301,7 +391,8 @@ public class TalkClient extends Application  {
         grid.add(sendBox, 1, 0);
 		Scene scene = new Scene(grid);
 		pStage.setScene(scene);
-		
+
+
 		// 事件处理
 		// 消息切换
         usrsListView.getSelectionModel().selectedItemProperty().addListener(
@@ -309,11 +400,12 @@ public class TalkClient extends Application  {
         				String new_val) -> {
         					String oldV = getUsrName(old_val);
         					String newV = getUsrName(new_val);
+//        					System.out.println("old:" + oldV);
+//        					System.out.println("new:" + newV);
         					if(! oldV.equals(newV)) { // 切换对话
         						if(usrsMsg.get(newV) != null) {
         							message.setText(usrsMsg.get(newV));
         							usrsMsgNotify.put(newV, false); // 已读
-        							usrsList.set(usrsList.indexOf(new_val), newV); // 删除(*)
         							messageGotoEndLine = true; // 因为事件处理无法滚到最后，只能通过这种方式让外部滚动了
         						} else {
         							message.setText("");
@@ -348,7 +440,7 @@ public class TalkClient extends Application  {
 						//	这里处理客户端请求
 						// 获取用户列表
 						out.println("[GETUSRS]");
-						out.flush(); 
+						out.flush();
 
 						String cmd = in.readLine();
 						if(cmd == null) break;
@@ -366,9 +458,13 @@ public class TalkClient extends Application  {
 								// 刷新选中用户最新消息
 								int curUsrId = usrsListView.getSelectionModel().getSelectedIndex();
 								String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
+								if(usrIsOffline(usrsListView.getSelectionModel().getSelectedItem())) 
+									sendMsg.setDisable(true);
+								else sendMsg.setDisable(false);
+
 								if(usrsMsgNotify.get(curUsr) != null && usrsMsgNotify.get(curUsr)) { // 有新消息了
 									usrsMsgNotify.put(curUsr, false); // 已读
-									usrsList.set(curUsrId, curUsr);
+									usrsList.set(curUsrId, curUsr); // 删除(*)提醒
 //									System.out.println(curUsr);
 									// 附加消息
 									message.appendText(usrsMsg.get(curUsr).substring(message.getText().length(), usrsMsg.get(curUsr).length()));
@@ -393,7 +489,7 @@ public class TalkClient extends Application  {
 		th.start();
 
 	}
-	
+
 	private boolean checkLogin() {
 		// 检测有效性
 		Alert alert = new Alert(AlertType.ERROR);
@@ -406,9 +502,9 @@ public class TalkClient extends Application  {
 			out.println("[REGISTER]"+usrName);
 			out.flush();
 			String result = in.readLine();
-			if(result.equals("[FAILED]")) 
+			if(result.equals("[FAILED]"))
 				return false;
-			else if(result.equals("[OK]")) 
+			else if(result.equals("[OK]"))
 				return true;
 		} catch (UnknownHostException e1) {
 			// TODO Auto-generated catch block
@@ -420,7 +516,7 @@ public class TalkClient extends Application  {
 			e1.printStackTrace();
 			alert.setContentText(e1.toString());
 			alert.showAndWait();
-		} 
+		}
 		return false;
 	}
 
@@ -433,12 +529,13 @@ public class TalkClient extends Application  {
 		pStage.setResizable(false);
 		loginScene();
 	}
-	
-	@Override 
+
+	@Override
 	public void stop() {
 		try {
 			if(in != null && out != null) {
 				out.println("[LOGOUT]");
+				saveTalkRecord();
 				out.flush();
 				in.close();
 				out.close();
@@ -451,6 +548,6 @@ public class TalkClient extends Application  {
 			e.printStackTrace();
 		}
 	}
-	
+
 
 }

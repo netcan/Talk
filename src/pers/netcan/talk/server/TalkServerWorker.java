@@ -1,3 +1,11 @@
+/*************************************************************************
+	> File Name: TalkServerWorker.java
+	> Author: Netcan
+	> Blog: http://www.netcan666.com
+	> Mail: 1469709759@qq.com
+	> Created Time: 2016-12-14 16:50:33 CST
+ ************************************************************************/
+
 package pers.netcan.talk.server;
 
 import java.io.BufferedReader;
@@ -26,7 +34,7 @@ public class TalkServerWorker extends Thread {
 		this.worker = socket;
 	}
 
-	
+
 	@Override
 	public void run() {
 		Users = TalkServerMaster.Users;
@@ -53,7 +61,7 @@ public class TalkServerWorker extends Thread {
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} 
+		}
 
 		try {
 			in.close();
@@ -66,12 +74,12 @@ public class TalkServerWorker extends Thread {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private TalkUser thisUser() { // 返回当前用户
 		if(this.userName == null) return null;
 		return Users.get(Users.indexOf(new TalkUser(userName)));
 	}
-	
+
 	public void showMsg() { // 显示当前用户收到的信息
 		if(userName == null) return;
 		String msg;
@@ -80,7 +88,7 @@ public class TalkServerWorker extends Thread {
 			out.flush();
 		}
 	}
-	
+
 	public boolean register(String userName) { // 注册用户
 		if(this.userName != null)  return false; // 已注册过
 		if(userName == null || Users.contains(new TalkUser(userName)))
@@ -89,7 +97,7 @@ public class TalkServerWorker extends Thread {
 		Users.add(new TalkUser(userName));
 		return true;
 	}
-	
+
 	public void getUsrs() {
 		String usrs = "[USERS]";
 		for(TalkUser usr: Users) {
@@ -106,10 +114,10 @@ public class TalkServerWorker extends Thread {
 		if((toUserId = Users.indexOf(new TalkUser(userName))) != -1) {
 			if(Users.get(toUserId).getName().equalsIgnoreCase(TalkServerMaster.Master))  // 群聊
 				for(int i=toUserId+1; i<Users.size(); ++i) { // 这里的要大括号，防止if和下一个else匹配！
-					if(i != Users.indexOf(thisUser())) 
+					if(i != Users.indexOf(thisUser()))
 						Users.get(i).sendAll(this.userName, msg); // 依次发送
 				}
-			else if(userName.equals(this.userName)) 
+			else if(userName.equals(this.userName))
 				Users.get(toUserId).sendMsg(TalkServerMaster.Master, msg);
 			else
 				Users.get(toUserId).sendMsg(this.userName, msg);
@@ -170,7 +178,7 @@ public class TalkServerWorker extends Thread {
 			getUsrs();
 		}
 	}
-	
+
 	private void log(String log) {
 		System.out.printf("[%s]%s\n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()), log);;
 	}

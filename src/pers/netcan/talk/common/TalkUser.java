@@ -1,3 +1,11 @@
+/*************************************************************************
+	> File Name: TalkUser.java
+	> Author: Netcan
+	> Blog: http://www.netcan666.com
+	> Mail: 1469709759@qq.com
+	> Created Time: 2016-12-14 16:50:15 CST
+ ************************************************************************/
+
 package pers.netcan.talk.common;
 
 import java.util.Vector;
