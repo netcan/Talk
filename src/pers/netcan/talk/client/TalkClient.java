@@ -382,8 +382,8 @@ public class TalkClient extends Application  {
         sendMsg.setPrefRowCount(5);
         sendMsg.setWrapText(true);
 
-        message.setStyle("-fx-font-size: 18;");
-        sendMsg.setStyle("-fx-font-size: 18;");
+        message.setStyle("-fx-font-size: 16;");
+        sendMsg.setStyle("-fx-font-size: 16;");
 //        byte[] emojiBytes = new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x81};
 //        String emojiAsString = new String(emojiBytes, Charset.forName("UTF-8"));
 //        sendMsg.setText(emojiAsString);
@@ -459,9 +459,11 @@ public class TalkClient extends Application  {
 			FlowPane pane = new FlowPane();
 			for(int i=0; i<TalkEmoji.emoji.length; ++i) 
 				pane.getChildren().add(emojis[i]);
-			Scene scene1 = new Scene(pane);
-			stage.setScene(scene1);
+			Scene emojiScene = new Scene(pane);
+			stage.setScene(emojiScene);
 			stage.setResizable(false);
+			stage.setX(pStage.getX() + pStage.getWidth() / 4);
+			stage.setY(pStage.getY());
 			stage.show();
 
 			stage.setOnCloseRequest(event2 -> {

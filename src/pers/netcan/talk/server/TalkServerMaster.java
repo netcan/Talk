@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Vector;
 
-import pers.netcan.talk.client.TalkClient;
 import pers.netcan.talk.common.TalkEmoji;
 import pers.netcan.talk.common.TalkUser;
 
