@@ -29,7 +29,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
@@ -52,6 +51,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -67,7 +67,7 @@ public class TalkClient extends Application  {
 	private static BufferedReader in;
 	private static PrintWriter out;
 	private static Stage pStage;
-	private static String VERSION = "0.3";
+	private static String VERSION = "0.4";
 	private static String talkRecordDir = "TalkRecords";
 	private ObservableList<String> usrsList;
 	private Map<String, String> usrsMsg; // 保存信息
@@ -76,6 +76,68 @@ public class TalkClient extends Application  {
 	private ListView<String> usrsListView;
 	private boolean messageGotoEndLine; // 切换消息滚到最后一行
 	String ip = "", usrName = "";
+	// Emoji表情包支持
+	public static String[] emoji = {
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x81}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x82}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x83}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x84}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x85}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x86}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x89}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8A}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8B}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8C}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8D}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8F}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x92}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x93}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x94}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x96}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x98}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x9A}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x9C}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x9D}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x9E}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA0}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA1}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA2}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA3}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA4}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA5}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA8}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA9}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xAA}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xAB}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xAD}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB0}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB1}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB2}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB3}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB5}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB7}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB8}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB9}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBA}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBB}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBC}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBD}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBE}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBF}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x80}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x85}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x86}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x87}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x88}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x89}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8A}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8B}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8C}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8D}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8E}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8F}),
+		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x90, (byte)0xBC})
+	};
 
 	private void loginScene() throws IOException {
 		File confFile = new File("Talk.conf");
@@ -221,7 +283,7 @@ public class TalkClient extends Application  {
 		if(all) fromUsr = TalkServerMaster.Master;
 		if(usrsMsg.get(fromUsr) == null)
 			usrsMsg.put(fromUsr, Msg);
-		else
+		else if(! fromUsr.equals(TalkServerMaster.Master))
 			usrsMsg.put(fromUsr, usrsMsg.get(fromUsr) + Msg);
 		usrsMsgNotify.put(fromUsr, true);
 	}
@@ -360,6 +422,7 @@ public class TalkClient extends Application  {
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
 
+
         // 在线用户
         usrsListView = new ListView<>(usrsList);
         usrsListView.setItems(usrsList);
@@ -380,6 +443,8 @@ public class TalkClient extends Application  {
         sendMsg.setPrefRowCount(5);
         sendMsg.setWrapText(true);
 
+        message.setStyle("-fx-font-size: 18;");
+        sendMsg.setStyle("-fx-font-size: 18;");
 //        byte[] emojiBytes = new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x81};
 //        String emojiAsString = new String(emojiBytes, Charset.forName("UTF-8"));
 //        sendMsg.setText(emojiAsString);
@@ -387,8 +452,10 @@ public class TalkClient extends Application  {
         sendBox.getChildren().add(sendMsg);
 
         Button btn = new Button("发送");
+        Button emojiBtn = new Button(emoji[0] + "表情");
         HBox hbBtn = new HBox(0);
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
+        hbBtn.getChildren().add(emojiBtn);
         hbBtn.getChildren().add(btn);
         sendBox.getChildren().add(hbBtn);
 
@@ -426,6 +493,7 @@ public class TalkClient extends Application  {
         		sendMsg();
         	}
 		});
+
         sendMsg.setOnKeyPressed(new EventHandler<KeyEvent>() {
         	   @Override
         	    public void handle(KeyEvent keyEvent) {
@@ -433,6 +501,33 @@ public class TalkClient extends Application  {
         	        	sendMsg();
         	        }
         	    }
+		});
+        
+        // 表情处理
+        Button []emojis = new Button[emoji.length];
+        for(int i=0; i<emoji.length; ++i) { // 将表情显示到按钮上
+        	emojis[i] = new Button(emoji[i]);
+        	emojis[i].setStyle("-fx-font-size: 24; -fx-focus-color: transparent;"); // 表情大小，清除选择的框框
+        	emojis[i].setOnAction((event) -> { 
+        		sendMsg.appendText(((Button) event.getSource()).getText()); // 黑科技，获取事件源对象
+        	});
+        }
+
+        emojiBtn.setOnAction(event1 -> { // 弹出表情选择
+			emojiBtn.setDisable(true);
+			Stage stage = new Stage();
+			stage.setTitle("Select Emoji");
+			FlowPane pane = new FlowPane();
+			for(int i=0; i<emoji.length; ++i) 
+				pane.getChildren().add(emojis[i]);
+			Scene scene1 = new Scene(pane);
+			stage.setScene(scene1);
+			stage.setResizable(false);
+			stage.show();
+
+			stage.setOnCloseRequest(event2 -> {
+				emojiBtn.setDisable(false);
+			});
 		});
 
 		// 线程处理消息接收
