@@ -22,10 +22,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -258,7 +260,7 @@ public class TalkClient extends Application  {
 		for(File file: dir.listFiles()) { // 遍历记录文件
 			Matcher m = p.matcher(file.getName());
 			if(m.find()) {
-				if(m.group(1).equals(usrName)) continue;
+				if(m.group(1).equals(usrName)) continue; // 跳过自己的聊天记录
 
 				try {
 					FileInputStream fis = new FileInputStream(file);
@@ -289,10 +291,10 @@ public class TalkClient extends Application  {
 		for(Map.Entry<String, String> usr: usrsMsg.entrySet()) {
 			File file = new File(talkRecordDir + "/" + usr.getKey() + ".txt");
 			try {
-				FileWriter fw = new FileWriter(file);
-				BufferedWriter bw = new BufferedWriter(fw);
-				bw.write(usr.getValue());
-				bw.close();
+				FileOutputStream fos = new FileOutputStream(file);
+				OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
+				osw.write(usr.getValue());
+				osw.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
