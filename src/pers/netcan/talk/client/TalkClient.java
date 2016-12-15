@@ -285,6 +285,7 @@ public class TalkClient extends Application  {
 	private void saveTalkRecord() {
 		File dir = new File(talkRecordDir);
 		if(! dir.exists()) dir.mkdir();
+		if(usrsMsg == null) return;
 		for(Map.Entry<String, String> usr: usrsMsg.entrySet()) {
 			File file = new File(talkRecordDir + "/" + usr.getKey() + ".txt");
 			try {
@@ -391,6 +392,7 @@ public class TalkClient extends Application  {
 
         Button btn = new Button("发送");
         Button emojiBtn = new Button(TalkEmoji.emoji[0] + "表情");
+        emojiBtn.setStyle("-fx-font-family: \"OpenSansEmoji\";"); 
         HBox hbBtn = new HBox(0);
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
         hbBtn.getChildren().add(emojiBtn);
@@ -445,8 +447,8 @@ public class TalkClient extends Application  {
         Button []emojis = new Button[TalkEmoji.emoji.length];
         for(int i=0; i<TalkEmoji.emoji.length; ++i) { // 将表情显示到按钮上
         	emojis[i] = new Button(TalkEmoji.emoji[i]);
-        	emojis[i].setPrefSize(66, 66);
-        	emojis[i].setStyle("-fx-font-size: 24; -fx-focus-color: transparent; -fx-font-family: \"OpenSansEmoji\";"); // 表情大小，清除选择的框框
+        	emojis[i].setPrefSize(56, 56);
+        	emojis[i].setStyle("-fx-font-size: 20; -fx-focus-color: transparent; -fx-font-family: \"OpenSansEmoji\";"); // 表情大小，清除选择的框框
         	emojis[i].setOnAction((event) -> { 
         		sendMsg.appendText(((Button) event.getSource()).getText()); // 黑科技，获取事件源对象
         	});
@@ -466,7 +468,7 @@ public class TalkClient extends Application  {
 			Scene emojiScene = new Scene(pane);
 			emojiStage.setScene(emojiScene);
 			emojiStage.setResizable(false);
-			emojiStage.setX(pStage.getX() + pStage.getWidth() / 4);
+			emojiStage.setX(pStage.getX() + pStage.getWidth() / 3);
 			emojiStage.setY(pStage.getY());
 			emojiStage.show();
 
@@ -591,7 +593,7 @@ public class TalkClient extends Application  {
 	@Override
 	public void stop() {
 		try {
-			if(in != null && out != null) {
+			if(in != null && out != null && client != null) {
 				out.println("[LOGOUT]");
 				saveTalkRecord();
 				out.flush();

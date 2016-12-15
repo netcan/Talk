@@ -58,9 +58,11 @@ public class TalkServerWorker extends Thread {
 		} catch (IOException e) {
 			// TODO: handle exception
 			e.printStackTrace();
+			logout();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			logout();
 		}
 
 		try {
