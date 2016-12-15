@@ -67,7 +67,8 @@ public class TalkClient extends Application  {
 	private static Socket client;
 	private static BufferedReader in;
 	private static PrintWriter out;
-	private static Stage pStage;
+	private static Stage pStage; // 主窗口
+	private static Stage emojiStage; // 表情窗口
 	private static String VERSION = "0.4";
 	private static String talkRecordDir = "TalkRecords";
 	private ObservableList<String> usrsList;
@@ -382,11 +383,9 @@ public class TalkClient extends Application  {
         sendMsg.setPrefRowCount(5);
         sendMsg.setWrapText(true);
 
-        message.setStyle("-fx-font-size: 16;");
-        sendMsg.setStyle("-fx-font-size: 16;");
-//        byte[] emojiBytes = new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x81};
-//        String emojiAsString = new String(emojiBytes, Charset.forName("UTF-8"));
-//        sendMsg.setText(emojiAsString);
+        message.setStyle("-fx-font-size: 17; -fx-font-family: \"OpenSansEmoji\";"); 
+        sendMsg.setStyle("-fx-font-size: 17; -fx-font-family: \"OpenSansEmoji\";"); 
+
         sendBox.getChildren().add(message);
         sendBox.getChildren().add(sendMsg);
 
@@ -446,27 +445,32 @@ public class TalkClient extends Application  {
         Button []emojis = new Button[TalkEmoji.emoji.length];
         for(int i=0; i<TalkEmoji.emoji.length; ++i) { // 将表情显示到按钮上
         	emojis[i] = new Button(TalkEmoji.emoji[i]);
-        	emojis[i].setStyle("-fx-font-size: 24; -fx-focus-color: transparent;"); // 表情大小，清除选择的框框
+        	emojis[i].setPrefSize(66, 66);
+        	emojis[i].setStyle("-fx-font-size: 24; -fx-focus-color: transparent; -fx-font-family: \"OpenSansEmoji\";"); // 表情大小，清除选择的框框
         	emojis[i].setOnAction((event) -> { 
         		sendMsg.appendText(((Button) event.getSource()).getText()); // 黑科技，获取事件源对象
         	});
         }
+        emojiStage = new Stage();
+        
+        pStage.setOnCloseRequest(event -> {
+        	if(emojiStage.isShowing()) emojiStage.close();
+        });
 
         emojiBtn.setOnAction(event1 -> { // 弹出表情选择
 			emojiBtn.setDisable(true);
-			Stage stage = new Stage();
-			stage.setTitle("Select Emoji");
+			emojiStage.setTitle("Select Emoji");
 			FlowPane pane = new FlowPane();
 			for(int i=0; i<TalkEmoji.emoji.length; ++i) 
 				pane.getChildren().add(emojis[i]);
 			Scene emojiScene = new Scene(pane);
-			stage.setScene(emojiScene);
-			stage.setResizable(false);
-			stage.setX(pStage.getX() + pStage.getWidth() / 4);
-			stage.setY(pStage.getY());
-			stage.show();
+			emojiStage.setScene(emojiScene);
+			emojiStage.setResizable(false);
+			emojiStage.setX(pStage.getX() + pStage.getWidth() / 4);
+			emojiStage.setY(pStage.getY());
+			emojiStage.show();
 
-			stage.setOnCloseRequest(event2 -> {
+			emojiStage.setOnCloseRequest(event2 -> {
 				emojiBtn.setDisable(false);
 			});
 		});
@@ -572,6 +576,12 @@ public class TalkClient extends Application  {
 	// login window
 	@Override
 	public void start(Stage primaryStage) throws IOException {
+		Font.loadFont(getClass().getResource("/assets/OpenSansEmoji.ttf").toExternalForm(), 16);
+
+//		Font.getFamilies();
+//		for(String s: Font.getFamilies()) {
+//			System.out.println(s);
+//		}
 		pStage = primaryStage;
 		pStage.setTitle("Talk by netcan v"+ VERSION);
 		pStage.setResizable(false);
