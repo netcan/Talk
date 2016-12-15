@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
@@ -378,6 +379,10 @@ public class TalkClient extends Application  {
         message.setWrapText(true);
         sendMsg.setPrefRowCount(5);
         sendMsg.setWrapText(true);
+
+//        byte[] emojiBytes = new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x81};
+//        String emojiAsString = new String(emojiBytes, Charset.forName("UTF-8"));
+//        sendMsg.setText(emojiAsString);
         sendBox.getChildren().add(message);
         sendBox.getChildren().add(sendMsg);
 
@@ -458,13 +463,15 @@ public class TalkClient extends Application  {
 								// 刷新选中用户最新消息
 								int curUsrId = usrsListView.getSelectionModel().getSelectedIndex();
 								String curUsr = getUsrName(usrsListView.getSelectionModel().getSelectedItem());
+
+								// 用户离线，消息禁用
 								if(usrIsOffline(usrsListView.getSelectionModel().getSelectedItem())) {
-									sendMsg.setText(curUsr + " is offline.");
 									sendMsg.setDisable(true);
+									btn.setDisable(true);
 								}
 								else {
-									sendMsg.setText("");
 									sendMsg.setDisable(false);
+									btn.setDisable(false);
 								}
 
 								if(usrsMsgNotify.get(curUsr) != null && usrsMsgNotify.get(curUsr)) { // 有新消息了
