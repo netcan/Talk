@@ -71,7 +71,7 @@ public class TalkClient extends Application  {
 	private static PrintWriter out;
 	private static Stage pStage; // 主窗口
 	private static Stage emojiStage; // 表情窗口
-	private static String VERSION = "0.4";
+	private static String VERSION = "0.44";
 	private static String talkRecordDir = "TalkRecords";
 	private ObservableList<String> usrsList;
 	private Map<String, String> usrsMsg; // 保存信息
@@ -225,7 +225,7 @@ public class TalkClient extends Application  {
 		if(all) fromUsr = TalkServerMaster.Master;
 		if(usrsMsg.get(fromUsr) == null)
 			usrsMsg.put(fromUsr, Msg);
-		else if(! fromUsr.equals(TalkServerMaster.Master))
+		else if(!Msg.contains(TalkServerMaster.WELCOME))
 			usrsMsg.put(fromUsr, usrsMsg.get(fromUsr) + Msg);
 		usrsMsgNotify.put(fromUsr, true);
 	}
@@ -462,7 +462,10 @@ public class TalkClient extends Application  {
         });
 
         emojiBtn.setOnAction(event1 -> { // 弹出表情选择
-			emojiBtn.setDisable(true);
+//			emojiBtn.setDisable(true);
+        	if(emojiStage.isShowing()) 
+        		emojiStage.close();
+
 			emojiStage.setTitle("Select Emoji");
 			FlowPane pane = new FlowPane();
 			for(int i=0; i<TalkEmoji.emoji.length; ++i) 
@@ -475,7 +478,7 @@ public class TalkClient extends Application  {
 			emojiStage.show();
 
 			emojiStage.setOnCloseRequest(event2 -> {
-				emojiBtn.setDisable(false);
+//				emojiBtn.setDisable(false);
 			});
 		});
 
