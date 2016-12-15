@@ -60,6 +60,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import pers.netcan.talk.common.TalkEmoji;
 import pers.netcan.talk.server.TalkServerMaster;
 
 public class TalkClient extends Application  {
@@ -76,68 +77,6 @@ public class TalkClient extends Application  {
 	private ListView<String> usrsListView;
 	private boolean messageGotoEndLine; // 切换消息滚到最后一行
 	String ip = "", usrName = "";
-	// Emoji表情包支持
-	public static String[] emoji = {
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x81}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x82}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x83}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x84}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x85}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x86}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x89}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8A}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8B}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8C}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8D}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x8F}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x92}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x93}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x94}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x96}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x98}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x9A}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x9C}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x9D}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0x9E}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA0}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA1}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA2}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA3}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA4}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA5}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA8}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xA9}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xAA}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xAB}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xAD}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB0}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB1}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB2}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB3}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB5}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB7}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB8}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xB9}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBA}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBB}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBC}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBD}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBE}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x98, (byte)0xBF}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x80}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x85}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x86}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x87}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x88}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x89}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8A}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8B}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8C}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8D}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8E}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x99, (byte)0x8F}),
-		new String(new byte[]{(byte)0xF0, (byte)0x9F, (byte)0x90, (byte)0xBC})
-	};
 
 	private void loginScene() throws IOException {
 		File confFile = new File("Talk.conf");
@@ -452,7 +391,7 @@ public class TalkClient extends Application  {
         sendBox.getChildren().add(sendMsg);
 
         Button btn = new Button("发送");
-        Button emojiBtn = new Button(emoji[0] + "表情");
+        Button emojiBtn = new Button(TalkEmoji.emoji[0] + "表情");
         HBox hbBtn = new HBox(0);
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
         hbBtn.getChildren().add(emojiBtn);
@@ -504,9 +443,9 @@ public class TalkClient extends Application  {
 		});
         
         // 表情处理
-        Button []emojis = new Button[emoji.length];
-        for(int i=0; i<emoji.length; ++i) { // 将表情显示到按钮上
-        	emojis[i] = new Button(emoji[i]);
+        Button []emojis = new Button[TalkEmoji.emoji.length];
+        for(int i=0; i<TalkEmoji.emoji.length; ++i) { // 将表情显示到按钮上
+        	emojis[i] = new Button(TalkEmoji.emoji[i]);
         	emojis[i].setStyle("-fx-font-size: 24; -fx-focus-color: transparent;"); // 表情大小，清除选择的框框
         	emojis[i].setOnAction((event) -> { 
         		sendMsg.appendText(((Button) event.getSource()).getText()); // 黑科技，获取事件源对象
@@ -518,7 +457,7 @@ public class TalkClient extends Application  {
 			Stage stage = new Stage();
 			stage.setTitle("Select Emoji");
 			FlowPane pane = new FlowPane();
-			for(int i=0; i<emoji.length; ++i) 
+			for(int i=0; i<TalkEmoji.emoji.length; ++i) 
 				pane.getChildren().add(emojis[i]);
 			Scene scene1 = new Scene(pane);
 			stage.setScene(scene1);

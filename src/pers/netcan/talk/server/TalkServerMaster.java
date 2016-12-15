@@ -13,6 +13,7 @@ import java.net.ServerSocket;
 import java.util.Vector;
 
 import pers.netcan.talk.client.TalkClient;
+import pers.netcan.talk.common.TalkEmoji;
 import pers.netcan.talk.common.TalkUser;
 
 public class TalkServerMaster {
@@ -20,7 +21,7 @@ public class TalkServerMaster {
 	public static int PORT = 2334;
 	public static String Master = "Master";
 	public static String WELCOME =
-			"\n欢迎使用Talk，Talk是Netcan的第一个Java作品，项目已开源：https://github.com/netcan/Talk，欢迎Star！" + TalkClient.emoji[0] + "\n" +
+			"\n欢迎使用Talk，Talk是Netcan的第一个Java作品，项目已开源：https://github.com/netcan/Talk，欢迎Star！" + TalkEmoji.emoji[0] + "\n" +
 			"个人博客：http://www.netcan666.com/";
 	static Vector<TalkUser> Users; // 所有用户
 
