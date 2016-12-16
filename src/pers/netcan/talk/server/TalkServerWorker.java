@@ -37,6 +37,7 @@ public class TalkServerWorker extends Thread {
 
 	@Override
 	public void run() {
+		System.out.println("worker thread: " + Thread.currentThread().getId() + " start");
 		Users = TalkServerMaster.Users;
 		try {
 			in  = new BufferedReader(new InputStreamReader(worker.getInputStream()));
@@ -69,12 +70,11 @@ public class TalkServerWorker extends Thread {
 			in.close();
 			out.close();
 			worker.close();
-			Thread.currentThread().interrupt();
-			return;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("worker thread: " + Thread.currentThread().getId() + " end");
 	}
 
 	private TalkUser thisUser() { // 返回当前用户
